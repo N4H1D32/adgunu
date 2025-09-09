@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Sihirli Sürpriz - Doğum Günü</title>
+<style>
+  /* Genel stil */
+  * {
+    box-sizing: border-box;
+  }
+  body, html {
+    margin: 0; padding: 0;
+    height: 100%;
+    background: #000;
+    color: white;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    overflow-x: hidden;
+  }
+  #app {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    text-align: center;
+    padding: 20px;
+  }
+  button {
+    background: #ff4081;
+    border: none;
+    padding: 15px 30px;
+    font-size: 1.5rem;
+    border-radius: 50px;
+    cursor: pointer;
+    color: white;
+    box-shadow: 0 0 10px #ff4081;
+    transition: background 0.3s ease;
+  }
+  button:hover {
+    background: #e73370;
+  }
+  /* Gradient animasyonu */
+  .gradient-bg {
+    animation: gradientShift 10s ease infinite;
+    background: linear-gradient(270deg, #ff4081, #ffcc00, #00e676, #2196f3, #ff4081);
+    background-size: 1000% 1000%;
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    z-index: -1;
+  }
+  @keyframes gradientShift {
+    0% {background-position: 0% 50%;}
+    50% {background-position: 100% 50%;}
+    100% {background-position: 0% 50%;}
+  }
+  /* Mutlu Yıllar yazısı */
+  #happyMessage {
+    font-size: 3rem;
+    font-weight: 700;
+    margin-bottom: 20px;
+    opacity: 0;
+    transform: scale(0.8);
+    transition: opacity 1s ease, transform 1s ease;
+  }
+  #happyMessage.show {
+    opacity: 1;
+    transform: scale(1);
+  }
+  /* Konfeti */
+  #confetti-canvas {
+    position: fixed;
+    pointer-events: none;
+    top: 0; left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 10;
+  }
+  /* Dev kalp */
+  #bigHeart {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    font-size: 10rem;
+    color: #ff4081;
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1);
+    transition: opacity 0.5s ease;
+    z-index: 20;
+    pointer-events: none;
+  }
+  #bigHeart.animate {
+    animation: heartMove 4s forwards;
+    opacity: 1;
+  }
+  @keyframes heartMove {
+    0% {
+      transform: translate(-50%, -50%) scale(3);
+      opacity: 1;
+    }
+    100% {
+      transform: translate(calc(100vw - 50px), 20px) scale(0.3);
+      opacity: 1;
+    }
+  }
+  /* Sürprizi Devam Et butonu */
+  #continueBtn {
+    margin-top: 30px;
+    display: none;
+  }
+  /* Fotoğraf galerisi */
+  #gallery {
+    margin-top: 30px;
+    max-width: 90vw;
+    max-height: 60vh;
+    position: relative;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+  }
+  #gallery img {
+    max-width: 100%;
+    max-height: 60vh;
+    border-radius: 15px;
+    box-shadow: 0 0 20px #ff4081;
+  }
+  #message {
+    margin-top: 15px;
+    font-size: 1.5rem;
+    color: #ff4081;
+    font-weight: 600;
+  }
+  /* Final mesaj */
+  #finalMessage {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-top: 40px;
+    opacity: 0;
+    transition: opacity 1s ease;
+    position: relative;
+    z-index: 30;
+  }
+  #finalMessage.show {
+    opacity: 1;
+  }
+  /* Uçuşan küçük kalpler */
+  .small-heart {
+    position: fixed;
+    font-size: 1.5rem;
+    color: #ff4081;
+    animation: floatUp 5s linear forwards;
+    user-select: none;
+    pointer-events: none;
+    z-index: 40;
+  }
+  @keyframes floatUp {
+    0% {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+    100% {
+      opacity: 0;
+      transform: translateY(-150px) scale(0.5);
+    }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <button id="openSurpriseBtn">Sürprizi Aç 🎁</button>
+
+  <div id="happyMessage">Doğum günün mübarək <span id="namePlaceholder">Ablanın Adı</span> 🎉</div>
+
+  <button id="continueBtn">Sürprizə Davam Et</button>
+
+  <div id="gallery">
+    <img id="galleryImage" src="" alt="Fotoğraf" />
+    <div id="message"></div>
+  </div>
+
+  <div id="finalMessage">Bacım, hər günün bir möcüzə kimi olsun ❤️</div>
+
+  <div id="bigHeart">❤️</div>
+</div>
+
+<canvas id="confetti-canvas"></canvas>
+
+<audio id="birthdaySong" loop>
+  <source src="happy-birthday-254480.mp3" type="audio/mpeg" />
+  <!-- Alternatif kaynak ekleyebilirsiniz -->
+</audio>
+
+<script>
+  const openBtn = document.getElementById('openSurpriseBtn');
+  const happyMessage = document.getElementById('happyMessage');
+  const namePlaceholder = document.getElementById('namePlaceholder');
+  const continueBtn = document.getElementById('continueBtn');
+  const gallery = document.getElementById('gallery');
+  const galleryImage = document.getElementById('galleryImage');
+  const messageDiv = document.getElementById('message');
+  const finalMessage = document.getElementById('finalMessage');
+  const bigHeart = document.getElementById('bigHeart');
+  const confettiCanvas = document.getElementById('confetti-canvas');
+  const birthdaySong = document.getElementById('birthdaySong');
+  const app = document.getElementById('app');
+
+  // Ablanın adını buraya yazabilirsiniz
+  const ablaAdi = "Zöhrə";
+
+  // Fotoğraflar ve mesajlar
+  const photos = [
+    {src: "1sekil.jpeg", msg: "Uğurların bol olsun 💕"},
+    {src: "4sekil.jpeg", msg: "Hər anın sevinc dolu olsun, bacım 🌸"},
+    {src: "3sekil.jpeg", msg: "100 yaşayasan ✨"}
+  ];
+
+  let currentPhotoIndex = 0;
+
+  // Gradient arka plan div'i
+  let gradientBgDiv;
+
+  openBtn.addEventListener('click', () => {
+    // Butonu gizle
+    openBtn.style.display = 'none';
+
+    // Gradient arka plan ekle
+    gradientBgDiv = document.createElement('div');
+    gradientBgDiv.classList.add('gradient-bg');
+    document.body.appendChild(gradientBgDiv);
+
+    // Mutlu Yıllar yazısını göster
+    namePlaceholder.textContent = ablaAdi;
+    happyMessage.classList.add('show');
+
+    // Konfeti başlat
+    startConfetti();
+
+    // Doğum günü şarkısını çal
+    birthdaySong.play();
+
+    // Dev kalp animasyonu
+    setTimeout(() => {
+      bigHeart.classList.add('animate');
+    }, 1000);
+
+    // Sürprizi Devam Et butonunu göster
+    setTimeout(() => {
+      continueBtn.style.display = 'inline-block';
+    }, 4000);
+  });
+
+  continueBtn.addEventListener('click', () => {
+    continueBtn.style.display = 'none';
+    happyMessage.style.display = 'none';
+
+    // Fotoğraf galerisi göster
+    gallery.style.display = 'flex';
+    showPhoto(currentPhotoIndex);
+  });
+
+  gallery.addEventListener('click', () => {
+    currentPhotoIndex++;
+    if (currentPhotoIndex >= photos.length) {
+      // Galeri bitti, final mesajı göster
+      gallery.style.display = 'none';
+      showFinalMessage();
+    } else {
+      showPhoto(currentPhotoIndex);
+    }
+  });
+
+  function showPhoto(index) {
+    galleryImage.src = photos[index].src;
+    messageDiv.textContent = photos[index].msg;
+  }
+
+  function showFinalMessage() {
+    finalMessage.classList.add('show');
+    // Küçük kalpler uçuşmaya başlasın
+    startSmallHearts();
+    // Konfeti durdur
+    stopConfetti();
+    // Şarkıyı durdur
+    birthdaySong.pause();
+    birthdaySong.currentTime = 0;
+  }
+
+  // --- Konfeti kodu ---
+  // Basit konfeti animasyonu canvas üzerinde
+
+  const confettiCtx = confettiCanvas.getContext('2d');
+  let confettiPieces = [];
+  let confettiAnimationId;
+
+  function randomRange(min, max) {
+    return Math.random() * (max - min) + min;
+  }
+
+  class ConfettiPiece {
+    constructor() {
+      this.x = Math.random() * window.innerWidth;
+      this.y = Math.random() * window.innerHeight - window.innerHeight;
+      this.size = randomRange(5, 10);
+      this.speed = randomRange(2, 5);
+      this.angle = Math.random() * 2 * Math.PI;
+      this.spin = randomRange(0.05, 0.1);
+      this.color = `hsl(${Math.floor(Math.random() * 360)}, 100%, 70%)`;
+      this.tilt = randomRange(-10, 10);
+      this.tiltSpeed = randomRange(0.05, 0.1);
+    }
+    update() {
+      this.y += this.speed;
+      this.angle += this.spin;
+      this.tilt += this.tiltSpeed;
+      if (this.y > window.innerHeight) {
+        this.y = -this.size;
+        this.x = Math.random() * window.innerWidth;
+      }
+    }
+    draw(ctx) {
+      ctx.save();
+      ctx.translate(this.x, this.y);
+      ctx.rotate(this.angle);
+      ctx.fillStyle = this.color;
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(this.size / 2, this.size + this.tilt);
+      ctx.lineTo(-this.size / 2, this.size + this.tilt);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  function startConfetti() {
+    confettiCanvas.width = window.innerWidth;
+    confettiCanvas.height = window.innerHeight;
+    confettiPieces = [];
+    for (let i = 0; i < 150; i++) {
+      confettiPieces.push(new ConfettiPiece());
+    }
+    confettiAnimationId = requestAnimationFrame(confettiLoop);
+  }
+
+  function confettiLoop() {
+    confettiCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+    confettiPieces.forEach(p => {
+      p.update();
+      p.draw(confettiCtx);
+    });
+    confettiAnimationId = requestAnimationFrame(confettiLoop);
+  }
+
+  function stopConfetti() {
+    cancelAnimationFrame(confettiAnimationId);
+    confettiCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+  }
+
+  // --- Küçük kalpler uçuşması ---
+  function startSmallHearts() {
+    const heartCount = 30;
+    for (let i = 0; i < heartCount; i++) {
+      createSmallHeart();
+    }
+  }
+
+  function createSmallHeart() {
+    const heart = document.createElement('div');
+    heart.classList.add('small-heart');
+    heart.textContent = '❤️';
+    heart.style.left = (Math.random() * window.innerWidth) + 'px';
+    heart.style.top = (window.innerHeight + 20) + 'px';
+    heart.style.animationDuration = (4 + Math.random() * 3) + 's';
+    document.body.appendChild(heart);
+
+    heart.addEventListener('animationend', () => {
+      heart.remove();
+      createSmallHeart();
+    });
+  }
+
+  // Responsive canvas resize
+  window.addEventListener('resize', () => {
+    confettiCanvas.width = window.innerWidth;
+    confettiCanvas.height = window.innerHeight;
+  });
+</script>
+</body>
+</html>
